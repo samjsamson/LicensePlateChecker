@@ -1,0 +1,130 @@
+(async () => {
+const words = [
+  "abbey","abide","acrid","adage","adorn","aerie","afire","aglow","agile","aglow",
+  "aisle","alert","algae","alias","alike","alive","aloft","alpha","altar","amber",
+  "amend","amity","anchor","angel","angle","annex","antic","arbor","arena","argue",
+  "arise","array","arrow","ashen","askew","asset","atoll","attic","audit","aunty",
+  "avail","awake","awful","axial","azure","bacon","badge","bagel","balmy","banal",
+  "baste","basil","batch","baton","beach","beady","beget","begun","belly","below",
+  "bench","berth","bible","bigot","bilge","bingo","birth","bison","bleak","blend",
+  "bless","blimp","blink","bliss","blunt","blush","board","boast","boney","bonus",
+  "booth","borax","borne","botch","bough","bounty","bowel","boxer","brace","braid",
+  "brake","bravo","bribe","bride","brief","brine","bring","broad","broke","brook",
+  "brunt","brush","brute","bucks","budge","bugle","build","built","bulge","bulky",
+  "bunch","bunny","burst","butte","buxom","cabin","cacao","cache","cacti","cadet",
+  "caged","cairn","cajun","calve","camel","caper","caput","carat","cargo","caste",
+  "catch","cater","cavil","chain","chair","chalk","champ","chant","chaos","chard",
+  "chase","cheap","cheek","cheer","chess","chest","chewy","chide","chief","child",
+  "chili","chime","chimp","china","chirp","chock","choir","choke","chose","clack",
+  "claim","clamp","clash","clasp","class","clean","clear","cleat","cleft","clerk",
+  "click","cliff","climb","cling","clink","cloak","clock","clone","close","cloth",
+  "cloud","clout","clove","clown","clued","coach","coast","cobra","cocoa","codec",
+  "codex","cohere","cough","could","count","coven","cover","cower","crane","crate",
+  "crave","creed","creek","crept","cress","crest","crisp","crite","croak","crook",
+  "cross","crouch","crowd","crown","crude","crumb","crush","crust","crypt","cursor",
+  "curvy","czech","daily","dairy","dance","dandy","dated","datum","daunt","dawn",
+  "dealt","death","debit","decay","decry","deeds","defer","deity","delay","demon",
+  "denim","dense","depot","depth","derby","deter","detox","deuce","devil","diary",
+  "digit","dinar","diner","dingo","dingy","dirge","dirty","disco","ditch","ditto",
+  "diver","dizzy","dodge","dogma","doing","dolor","dolly","dome","donna","donor",
+  "dooms","doors","doped","dopey","dorse","dosha","doted","doubt","dough","dowel",
+  "downy","dowry","dozed","dozen","drama","drank","drawl","dread","dream","dregs",
+  "drift","drill","drink","drive","droll","drove","drown","druid","drums","dryad",
+  "dryer","ducal","duchy","ducts","dudek","duddy","duels","duets","duffy","dukes",
+  "dully","dumps","dumpy","dunce","dunes","dungy","dunks","duomo","durer","duvet",
+  "dwarf","dwelt","dying","eager","eagle","early","earth","easel","eaten","eater",
+  "eaves","ebony","eccles","eclat","edict","edify","eerie","egret","eides","eight",
+  "eject","eking","elate","elbow","elder","elect","elegy","elfin","elide","elite",
+  "elope","elude","email","embed","ember","emcee","emery","emirs","emits","emote",
+  "empty","enable","enact","ended","endow","endue","enemy","enjoy","ennui","ensue",
+  "enter","entry","envoy","epics","epoch","epoxy","equal","equip","erase","erect",
+  "erode","error","erupt","essay","ester","ethic","ethos","etude","evade","evening",
+  "event","every","evict","evoke","exact","exalt","excel","exert","exile","exist",
+  "expel","expos","extol","extra","exult","eying","fable","facet","faded","faery",
+  "faint","fairy","faith","fajita","falls","false","famed","fancy","fangs","farce",
+  "farer","fared","farms","fastid","fatal","fated","fatty","fault","favor","feast",
+  "fecal","feign","feint","fella","felon","femme","femur","fence","fender","feral",
+  "feria","fermi","ferry","fetal","fetch","fetid","fetus","fever","fiend","fifth",
+  "fight","filer","filet","fillo","filly","filmy","filth","final","finch","fined",
+  "fiord","fired","firer","first","fishy","fisty","fitly","fiver","fives","fixed",
+  "fizzy","fjord","flair","flaky","flame","flank","flare","flash","flask","fleet",
+  "flesh","flick","flier","fling","float","flock","flood","floor","flour","flout",
+  "flown","fluid","fluke","flume","flung","flush","flyer","foamy","focal","focus",
+  "fogey","foggy","folio","folks","folly","foray","force","forge","forgo","forth",
+  "forty","forum","foyer","frail","frame","franc","frank","fraud","freak","freed",
+  "freer","fresh","friar","fried","frill","frisk","fritz","froze","fruit","fryer",
+  "fudge","fuel","fugal","fugue","fully","funds","fungi","funny","furor","furry",
+  "fussy","fuzzy","gable","gains","gaily","gamer","gamma","gamut","gassy","gates",
+  "gavel","gawky","gazed","gecko","geeky","geese","geist","gelid","gemma","genie",
+  "genus","germs","ghost","ghoul","giant","giddy","gifts","giggle","gilds","gills",
+  "gilts","gipsy","giveth","glade","gland","glare","glass","glaze","gleam","glide",
+  "glint","gloat","globe","gloom","glory","gloss","glove","glued","gluer","gluon",
+  "glute","gnash","gnome","godly","going","golds","golem","golly","gonad","gonna",
+  "goods","goose","gorge","gouge","gourd","grace","grade","graft","grain","grand",
+  "grant","grape","graph","grasp","grass","grate","grave","gravy","graze","grease",
+  "great","greed","green","greet","grief","grill","grime","grimy","grind","gripe",
+  "groan","groin","grove","growl","grown","gruel","gruff","grunt","guard","guess",
+  "guest","guide","guild","guilt","guise","gulch","gulls","gully","gumbo","gummy",
+  "guppy","gusto","gusty","gutsy","guyed","gypsy","habit","hairy","halcy","hallo",
+  "halls","hallo","halo","halos","halts","halve","hands","handy","hangs","hanky",
+  "haunt","haven","havoc","hazed","hazel","hazed","hazy","heads","heady","heard",
+  "heart","heavy","hedge","hefty","heist","helix","hello","hulls","human","humid",
+  "humor","humus","hunch","hunks","hunky","hurly","hurry","hussy","hydra","icy"
+];
+
+
+  const baseUrl = 'https://www.dmv.ca.gov/wasapp/ipp2/checkPers.do';
+
+  for (const word of words) {
+    const plate = word.toUpperCase().slice(0, 7);
+
+    // Must be at least 2 characters to avoid "two.characters" validation error
+    if (plate.length < 2) {
+      console.warn(`⚠️ Skipping "${plate}" — too short.`);
+      continue;
+    }
+
+    const formData = new URLSearchParams({
+      plateType: 'Z',
+      kidsPlate: '',
+      plateNameLow: 'california 1960s legacy',
+      plateName: 'California 1960s Legacy',
+      plateLength: '7',
+      vetDecalCd: '',
+      centeredPlateLength: '0',
+      platechecked: 'no',
+      imageSelected: 'none',
+      vehicleType: 'AUTO',
+      vetDecalDesc: ''
+    });
+
+    // Dynamically fill plateChar fields with actual letters, then blanks
+    for (let i = 0; i < 14; i++) {
+      formData.append(`plateChar${i}`, plate[i] || '');
+    }
+
+    try {
+      const res = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData.toString()
+      });
+
+      const json = await res.json();
+
+      if (json.success && json.code === 'AVAILABLE') {
+        console.log(`✅ ${plate} is Available`);
+      } else if (json.code === 'VALIDATION') {
+        console.log(`⚠️ ${plate} is Invalid (${json.message})`);
+      } else {
+        //console.log(`❌ ${plate} is Taken`);
+      }
+    } catch (err) {
+      console.error(`🚫 Error checking "${plate}":`, err);
+    }
+
+    //await new Promise(r => setTimeout(r, 100)); // Delay to prevent rate limit
+  }
+})();
