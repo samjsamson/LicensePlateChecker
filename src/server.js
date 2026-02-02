@@ -4,6 +4,7 @@ const { fetch } = require('undici');
 
 const app = fastify({ logger: true });
 const PORT = process.env.PORT || 3000;
+const DMV_START_URL = 'https://www.dmv.ca.gov/wasapp/ipp2/startPers.do';
 const DMV_URL = 'https://www.dmv.ca.gov/wasapp/ipp2/checkPers.do';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -12,6 +13,27 @@ const plateCache = new Map();
 const requestBuckets = new Map();
 
 class ValidationError extends Error {}
+
+function extractCookieHeader(setCookieHeaders) {
+  if (!Array.isArray(setCookieHeaders) || setCookieHeaders.length === 0) {
+    return '';
+  }
+
+  return setCookieHeaders
+    .map((cookie) => String(cookie).split(';')[0])
+    .filter(Boolean)
+    .join('; ');
+}
+
+async function fetchDmvCookie() {
+  const res = await fetch(DMV_START_URL, {
+    method: 'GET',
+    signal: AbortSignal.timeout(10000)
+  });
+
+  const setCookieHeaders = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
+  return extractCookieHeader(setCookieHeaders);
+}
 
 function getClientIp(request) {
   const forwarded = request.headers['x-forwarded-for'];
@@ -123,6 +145,18 @@ function interpretDmvResponse(payload, httpStatus) {
 
   const code = String(payload.code || payload.status || payload.result || '').toUpperCase();
   const message = payload.message || payload.errorMessage || payload.statusMessage;
+  const normalizedMessage = typeof message === 'string' ? message.trim().toLowerCase() : '';
+  const messageMap = {
+    'message.available': { status: 'available', message: 'That plate is available.' },
+    'message.notavailable': { status: 'taken', message: 'That plate appears to be taken.' },
+    'message.taken': { status: 'taken', message: 'That plate appears to be taken.' },
+    'message.invalid': { status: 'invalid', message: 'That plate is invalid.' },
+    'message.global': { status: 'unavailable', message: 'DMV returned a temporary error. Please try again.' }
+  };
+
+  if (messageMap[normalizedMessage]) {
+    return messageMap[normalizedMessage];
+  }
 
   if (payload.success === true && code === 'AVAILABLE') {
     return { status: 'available', message: 'That plate is available.' };
@@ -149,7 +183,7 @@ function interpretDmvResponse(payload, httpStatus) {
     return { status: 'taken', message: message || 'That plate appears to be taken.' };
   }
 
-  if (typeof message === 'string' && message.length > 0) {
+  if (typeof message === 'string' && message.length > 0 && !normalizedMessage.startsWith('message.')) {
     return { status: 'taken', message };
   }
 
@@ -187,11 +221,15 @@ app.post('/api/check-plate', async (request, reply) => {
     }
 
     const formData = buildPlateForm(normalized);
+    const cookieHeader = await fetchDmvCookie();
 
     const res = await fetch(DMV_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Referer: DMV_START_URL,
+        Origin: 'https://www.dmv.ca.gov',
+        ...(cookieHeader ? { Cookie: cookieHeader } : {})
       },
       body: formData.toString(),
       signal: AbortSignal.timeout(10000)
