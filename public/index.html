@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>California Plate Checker</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f7fb;
+        color: #1c2233;
+      }
+
+      main {
+        width: min(480px, 90vw);
+        padding: 2rem;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 20px 60px rgba(19, 35, 60, 0.12);
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        margin-top: 0;
+        color: #475067;
+      }
+
+      .legal-note {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 0.9rem;
+      }
+
+      form {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+      }
+
+      input {
+        flex: 1;
+        padding: 0.6rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid #d0d6e0;
+        transition: border-color 0.2s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #1c5cda;
+      }
+
+      button {
+        padding: 0.6rem 1.2rem;
+        border: none;
+        border-radius: 8px;
+        background: #1c5cda;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      button:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+      }
+
+      #result {
+        min-height: 2rem;
+        margin-top: 1rem;
+        font-weight: 600;
+      }
+
+      #result span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>California Plate Checker</h1>
+      <p>Enter up to 7 letters, digits, spaces, or "/" for a half-space. Press “Check Availability” to query the DMV for that plate.</p>
+      <p class="legal-note">PlateChecker is an independent tool and is not affiliated with or endorsed by the California DMV.</p>
+
+      <form id="plate-form">
+        <input
+          id="plate-input"
+          name="plate"
+          type="text"
+          maxlength="7"
+          placeholder="e.g. FASTCAR"
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Check</button>
+      </form>
+      <p id="result" aria-live="polite"></p>
+    </main>
+
+    <script>
+      const form = document.getElementById('plate-form');
+      const input = document.getElementById('plate-input');
+      const result = document.getElementById('result');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const plate = input.value;
+        result.textContent = 'Checking availability…';
+        form.querySelector('button').disabled = true;
+
+        try {
+          const response = await fetch('/api/check-plate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plate })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            result.innerHTML = `<span style="color:#f97316;">⚠️ ${data.error || 'Unable to validate plate.'}</span>`;
+          } else if (data.status === 'available') {
+            result.innerHTML = `<span style="color:#16a34a;">✅ ${data.message}</span>`;
+          } else if (data.status === 'invalid') {
+            result.innerHTML = `<span style="color:#f97316;">⚠️ ${data.message}</span>`;
+          } else {
+            result.innerHTML = `<span style="color:#ef4444;">❌ ${data.message}</span>`;
+          }
+        } catch (error) {
+          result.innerHTML = `<span style="color:#ef4444;">❌ ${error.message}</span>`;
+        } finally {
+          form.querySelector('button').disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
