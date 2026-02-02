@@ -27,13 +27,41 @@ function extractCookieHeader(setCookieHeaders) {
 }
 
 async function fetchDmvCookie() {
-  const res = await fetch(DMV_START_URL, {
-    method: 'GET',
-    signal: AbortSignal.timeout(10000)
-  });
+  let url = DMV_START_URL;
+  let cookieHeader = '';
 
-  const setCookieHeaders = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
-  return extractCookieHeader(setCookieHeaders);
+  // Follow redirects manually so we retain all session cookies.
+  for (let i = 0; i < 5; i++) {
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'manual',
+      headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+      signal: AbortSignal.timeout(10000)
+    });
+
+    let setCookieHeaders = [];
+    if (typeof res.headers.getSetCookie === 'function') {
+      setCookieHeaders = res.headers.getSetCookie();
+    } else {
+      const single = res.headers.get('set-cookie');
+      if (single) setCookieHeaders = [single];
+    }
+
+    const nextCookie = extractCookieHeader(setCookieHeaders);
+    if (nextCookie) {
+      cookieHeader = cookieHeader ? `${cookieHeader}; ${nextCookie}` : nextCookie;
+    }
+
+    const location = res.headers.get('location');
+    if (res.status >= 300 && res.status < 400 && location) {
+      url = new URL(location, url).toString();
+      continue;
+    }
+
+    return cookieHeader;
+  }
+
+  return cookieHeader;
 }
 
 function getClientIp(request) {
@@ -108,7 +136,8 @@ function buildPlateForm(plate) {
     kidsPlate: '',
     plateNameLow: 'california 1960s legacy',
     plateName: 'California 1960s Legacy',
-    plateLength: String(plate.length),
+    // DMV expects the plate design length here, not the typed input length.
+    plateLength: '7',
     vetDecalCd: '',
     centeredPlateLength: '0',
     platechecked: 'no',
@@ -241,6 +270,7 @@ app.post('/api/check-plate', async (request, reply) => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
         'X-Requested-With': 'XMLHttpRequest',
         'User-Agent': 'Mozilla/5.0 (compatible; PlateChecker/1.0; +https://platechecker.org)',
         Referer: DMV_START_URL,
