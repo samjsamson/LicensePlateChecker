@@ -6,6 +6,7 @@ const app = fastify({ logger: true });
 const PORT = process.env.PORT || 3000;
 const DMV_START_URL = 'https://www.dmv.ca.gov/wasapp/ipp2/startPers.do';
 const DMV_URL = 'https://www.dmv.ca.gov/wasapp/ipp2/checkPers.do';
+const DEBUG_DMV = process.env.DEBUG_DMV === 'true';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
@@ -190,6 +191,18 @@ function interpretDmvResponse(payload, httpStatus) {
   return { status: 'unavailable', message: 'Could not interpret DMV response. Please try again.' };
 }
 
+function getPayloadSnippet(payload) {
+  if (typeof payload === 'string') {
+    return payload.slice(0, 500);
+  }
+
+  try {
+    return JSON.stringify(payload).slice(0, 500);
+  } catch {
+    return String(payload).slice(0, 500);
+  }
+}
+
 app.register(require('@fastify/cors'), {
   origin: true,
   methods: ['POST', 'GET']
@@ -227,6 +240,9 @@ app.post('/api/check-plate', async (request, reply) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json, text/plain, */*',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (compatible; PlateChecker/1.0; +https://platechecker.org)',
         Referer: DMV_START_URL,
         Origin: 'https://www.dmv.ca.gov',
         ...(cookieHeader ? { Cookie: cookieHeader } : {})
@@ -250,6 +266,16 @@ app.post('/api/check-plate', async (request, reply) => {
 
     const interpreted = interpretDmvResponse(payload, res.status);
     if (interpreted.status === 'unavailable') {
+      if (DEBUG_DMV) {
+        app.log.warn(
+          {
+            dmvStatus: res.status,
+            dmvContentType: contentType,
+            dmvPayloadSnippet: getPayloadSnippet(payload)
+          },
+          'DMV response could not be interpreted'
+        );
+      }
       return reply.status(502).send({ error: interpreted.message });
     }
 
